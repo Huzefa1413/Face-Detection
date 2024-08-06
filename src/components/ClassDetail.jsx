@@ -22,6 +22,7 @@ const ClassDetail = () => {
   const [faceDetected, setFaceDetected] = useState(false);
   const [markingAttendance, setMarkingAttendance] = useState(false);
   const [attendanceResult, setAttendanceResult] = useState(null);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -40,15 +41,7 @@ const ClassDetail = () => {
   }, [classId]);
 
   const handleCaptureImage = () => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true })
-      .then((stream) => {
-        videoRef.current.srcObject = stream;
-        videoRef.current.play();
-      })
-      .catch((error) => console.error('Error accessing camera:', error));
-
-    videoRef.current.addEventListener('loadeddata', () => {
+    if (cameraOpen) {
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
       canvas.width = videoRef.current.videoWidth;
@@ -60,9 +53,28 @@ const ClassDetail = () => {
       const stream = videoRef.current.srcObject;
       const tracks = stream.getTracks();
       tracks.forEach((track) => track.stop());
-
+      setCameraOpen(false);
       detectFace(imageUrl);
-    });
+    } else {
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then((stream) => {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+          setCameraOpen(true);
+        })
+        .catch((error) => console.error('Error accessing camera:', error));
+    }
+  };
+
+  const handleCloseCamera = () => {
+    if (videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject;
+      const tracks = stream.getTracks();
+      tracks.forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
+      setCameraOpen(false);
+    }
   };
 
   const detectFace = async (imageDataUrl) => {
@@ -165,19 +177,25 @@ const ClassDetail = () => {
   };
 
   return (
-    <div>
+    <div className="container mt-4">
       <h2>Class Detail</h2>
       <h3>Students</h3>
       {students.length > 0 ? (
-        <ul>
+        <ul className="list-group mb-4">
           {students.map((student) => (
-            <li key={student.id}>
-              {student.name} ({student.email})
+            <li
+              key={student.id}
+              className="list-group-item d-flex justify-content-between align-items-center"
+            >
+              <div>
+                <strong>{student.name}</strong> ({student.email})
+              </div>
               {student.imageUrl && (
                 <img
                   src={student.imageUrl}
                   alt={student.name}
-                  style={{ width: '50px', height: '50px', borderRadius: '50%' }}
+                  className="rounded-circle"
+                  style={{ width: '50px', height: '50px' }}
                 />
               )}
             </li>
@@ -187,49 +205,93 @@ const ClassDetail = () => {
         <p>No students in this class. Add a new student to get started.</p>
       )}
       <h3>Add Student</h3>
-      <form onSubmit={handleSaveStudent}>
-        <input
-          type="text"
-          value={studentName}
-          onChange={(e) => setStudentName(e.target.value)}
-          placeholder="Student Name"
-          required
-        />
-        <input
-          type="email"
-          value={studentEmail}
-          onChange={(e) => setStudentEmail(e.target.value)}
-          placeholder="Student Email"
-          required
-        />
-        <button type="button" onClick={handleCaptureImage}>
-          Capture Image
-        </button>
-        {capturedImage && (
-          <img
-            src={capturedImage}
-            alt="Captured"
-            style={{ width: '100px', height: '100px' }}
+      <form onSubmit={handleSaveStudent} className="mb-4">
+        <div className="mb-3">
+          <input
+            type="text"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            placeholder="Student Name"
+            required
+            className="form-control"
           />
+        </div>
+        <div className="mb-3">
+          <input
+            type="email"
+            value={studentEmail}
+            onChange={(e) => setStudentEmail(e.target.value)}
+            placeholder="Student Email"
+            required
+            className="form-control"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleCaptureImage}
+          className="btn btn-primary"
+        >
+          {cameraOpen ? 'Capture Image' : 'Open Camera'}
+        </button>
+        {cameraOpen && (
+          <button
+            type="button"
+            onClick={handleCloseCamera}
+            className="btn btn-danger ms-2"
+          >
+            Close Camera
+          </button>
         )}
-        {faceDetected && <button type="submit">Save Student</button>}
+        {!cameraOpen && capturedImage && (
+          <div className="mt-3">
+            <img
+              src={capturedImage}
+              alt="Captured"
+              className="img-thumbnail"
+              style={{ width: '150px', height: '150px' }}
+            />
+          </div>
+        )}
+        {!cameraOpen && faceDetected && (
+          <button type="submit" className="btn btn-success mt-2">
+            Save Student
+          </button>
+        )}
       </form>
-      <video ref={videoRef} style={{ display: 'none' }}></video>
+      <video
+        ref={videoRef}
+        style={{
+          display: cameraOpen ? 'block' : 'none',
+          width: '100%',
+          maxWidth: '400px',
+        }}
+        className="mb-4"
+      ></video>
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
 
       <h3>Mark Attendance</h3>
-      <button onClick={handleStartAttendance}>Start Attendance</button>
+      <button onClick={handleStartAttendance} className="btn btn-primary mb-3">
+        Start Attendance
+      </button>
       {markingAttendance && (
         <div>
-          <button onClick={handleCaptureImage}>Capture Image</button>
+          <button onClick={handleCaptureImage} className="btn btn-primary mb-3">
+            Capture Image
+          </button>
           {capturedImage && (
-            <div>
+            <div className="mb-3">
               <img
                 src={capturedImage}
                 alt="Captured"
-                style={{ width: '100px', height: '100px' }}
+                className="img-thumbnail"
+                style={{ width: '150px', height: '150px' }}
               />
-              <button onClick={handleMarkAttendance}>Mark Attendance</button>
+              <button
+                onClick={handleMarkAttendance}
+                className="btn btn-success ms-2"
+              >
+                Mark Attendance
+              </button>
             </div>
           )}
         </div>

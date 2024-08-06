@@ -59,34 +59,58 @@ const Dashboard = () => {
   };
 
   return (
-    <div>
-      <h2>Dashboard</h2>
+    <div className="container mt-5">
+      <h2 className="mb-4">Classes</h2>
       {classes.length > 0 ? (
-        <ul>
+        <ul className="list-group mb-4">
           {classes.map((cls) => (
-            <li key={cls.id}>
+            <li
+              key={cls.id}
+              className="list-group-item d-flex justify-content-between align-items-center"
+            >
               {cls.name}
-              <button onClick={() => handleClassClick(cls.id)}>
+              <button
+                className="btn btn-primary"
+                onClick={() => handleClassClick(cls.id)}
+              >
                 View Class
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p>No classes available. Add a new class to get started.</p>
+        <p className="text-muted">
+          No classes available. Add a new class to get started.
+        </p>
       )}
-      <button onClick={() => setShowAddClassForm(true)}>Add Class</button>
+      <button
+        className="btn btn-success mb-3"
+        onClick={() => setShowAddClassForm(true)}
+      >
+        Add Class
+      </button>
       {showAddClassForm && (
-        <form onSubmit={handleAddClass}>
-          <input
-            type="text"
-            value={newClassName}
-            onChange={(e) => setNewClassName(e.target.value)}
-            placeholder="Class Name"
-            required
-          />
-          <button type="submit">Save Class</button>
-          <button type="button" onClick={() => setShowAddClassForm(false)}>
+        <form onSubmit={handleAddClass} className="card p-4">
+          <div className="form-group">
+            <label htmlFor="newClassName">Class Name</label>
+            <input
+              type="text"
+              id="newClassName"
+              value={newClassName}
+              onChange={(e) => setNewClassName(e.target.value)}
+              className="form-control"
+              placeholder="Enter class name"
+              required
+            />
+          </div>
+          <button type="submit" className="btn btn-primary mt-3">
+            Save Class
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary mt-3"
+            onClick={() => setShowAddClassForm(false)}
+          >
             Cancel
           </button>
         </form>
