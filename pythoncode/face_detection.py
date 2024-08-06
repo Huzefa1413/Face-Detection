@@ -1,79 +1,78 @@
-import cv2
-import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import cv2
+import numpy as np
+import firebase_admin
+from firebase_admin import credentials, firestore, storage
+import pickle
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+CORS(app)
 
-# Load pre-trained face detection model from OpenCV
+# Initialize Firebase
+cred = credentials.Certificate("face-detection-102af-firebase-adminsdk-pal10-1711c61527.json")
+firebase_admin.initialize_app(cred, {'storageBucket': 'face-detection-102af.appspot.com'})
+
+db = firestore.client()
+bucket = storage.bucket()
+
+# Load model
+with open('face_recognizer.pkl', 'rb') as f:
+    data = pickle.load(f)
+face_recognizer = data['model']
+label_encoder = data['label_encoder']
+
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-# Simulate a stored faces database
-# In a real application, this would be stored in a database
-stored_faces = {
-    "student1_id": {
-        "classId": "class1_id",
-        "descriptor": [0.1, 0.2, 0.3]  # Dummy descriptor
-    },
-    # Add more student entries as needed
-}
 
 @app.route('/detect_face', methods=['POST'])
 def detect_face():
     file = request.files['image']
     npimg = np.fromfile(file, np.uint8)
-    img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
+    img = cv2.imdecode(npimg, cv2.IMREAD_GRAYSCALE)
+    faces = face_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
     response = []
     for (x, y, w, h) in faces:
-        face_img = img[y:y+h, x:x+w]  # Crop the face
-        _, buffer = cv2.imencode('.jpg', face_img)
-        face_img_encoded = buffer.tobytes()
         response.append({
             "x": int(x),
             "y": int(y),
             "width": int(w),
-            "height": int(h),
-            "face_image": face_img_encoded.hex()  # Convert to hex string for transmission
+            "height": int(h)
         })
     return jsonify(response)
-
+    
 @app.route('/recognize_face', methods=['POST'])
 def recognize_face():
     file = request.files['image']
     npimg = np.fromfile(file, np.uint8)
-    img = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
-
+    img = cv2.imdecode(npimg, cv2.IMREAD_GRAYSCALE)
+    faces = face_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     if len(faces) == 0:
-        return jsonify({"error": "No face detected"}), 400
-
-    # For simplicity, we'll assume only one face per image
-    (x, y, w, h) = faces[0]
-    face_img = img[y:y+h, x:x+w]
-
-    # Simulate extracting a face descriptor
-    # In a real application, use a proper face recognition model like FaceNet or Dlib
-    face_descriptor = [0.1, 0.2, 0.3]  # Dummy descriptor
-
-    # Find the best match
-    best_match = None
-    best_distance = float('inf')
-    for student_id, student_data in stored_faces.items():
-        stored_descriptor = student_data["descriptor"]
-        distance = np.linalg.norm(np.array(stored_descriptor) - np.array(face_descriptor))
-        if distance < best_distance:
-            best_distance = distance
-            best_match = {"id": student_id, "classId": student_data["classId"]}
-
-    if best_distance < 0.6:  # Threshold for a match
-        return jsonify(best_match)
-    else:
-        return jsonify({"error": "No matching student found"}), 400
+        return jsonify({"error": "No face detected"}),400
+    
+    results = []
+    for (x, y, w, h) in faces:
+        face = img[y:y+h, x:x+w]
+        face = cv2.resize(face, (100, 100)).flatten().reshape(1, -1)
+        label = face_recognizer.predict(face)[0]
+        decision_function = face_recognizer.decision_function(face)
+        confidence = decision_function[0] if decision_function.size == 1 else decision_function[0][0]
+        
+        results.append({
+            "label": int(label),
+            "confidence": float(confidence)
+        })
+    
+    if len(results) > 0:
+        # Assume the first result is the most relevant
+        label = results[0]['label']
+        confidence = results[0]['confidence']
+        recognized_student = {
+            "id": label_encoder.inverse_transform([label])[0],
+            "confidence": confidence
+        }
+        return jsonify(recognized_student)
+    return jsonify({"error": "Face not recognized"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

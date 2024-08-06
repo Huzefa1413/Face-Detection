@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
 import {
   collection,
   query,
   where,
   getDocs,
   addDoc,
-  serverTimestamp,
   updateDoc,
   doc,
 } from 'firebase/firestore';
+import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import axios from 'axios';
 
 const ClassDetail = () => {
@@ -46,9 +46,7 @@ const ClassDetail = () => {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       })
-      .catch((error) => {
-        console.error('Error accessing camera:', error);
-      });
+      .catch((error) => console.error('Error accessing camera:', error));
 
     videoRef.current.addEventListener('loadeddata', () => {
       const canvas = canvasRef.current;
@@ -59,7 +57,6 @@ const ClassDetail = () => {
 
       const imageUrl = canvas.toDataURL();
       setCapturedImage(imageUrl);
-
       const stream = videoRef.current.srcObject;
       const tracks = stream.getTracks();
       tracks.forEach((track) => track.stop());
@@ -78,9 +75,7 @@ const ClassDetail = () => {
         'http://127.0.0.1:5000/detect_face',
         formData,
         {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' },
         }
       );
 
@@ -107,12 +102,18 @@ const ClassDetail = () => {
       return;
     }
     try {
+      const imageRef = ref(storage, `images/${Date.now()}.png`);
+      const response = await fetch(capturedImage);
+      const blob = await response.blob();
+      await uploadBytes(imageRef, blob);
+      const imageUrl = await getDownloadURL(imageRef);
+
       const newStudent = {
         name: studentName,
         email: studentEmail,
         classId,
-        createdOn: serverTimestamp(),
-        imageUrl: capturedImage,
+        createdOn: new Date(),
+        imageUrl,
       };
       await addDoc(collection(db, 'students'), newStudent);
       setStudents([...students, newStudent]);
@@ -132,10 +133,8 @@ const ClassDetail = () => {
   };
 
   const handleMarkAttendance = async () => {
-    const imageUrl = capturedImage;
-
     try {
-      const blob = await fetch(imageUrl).then((res) => res.blob());
+      const blob = await fetch(capturedImage).then((res) => res.blob());
       const formData = new FormData();
       formData.append('image', blob, 'image.png');
 
@@ -143,17 +142,17 @@ const ClassDetail = () => {
         'http://127.0.0.1:5000/recognize_face',
         formData,
         {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
+          headers: { 'Content-Type': 'multipart/form-data' },
         }
       );
 
       const recognizedStudent = response.data;
-
-      if (recognizedStudent && recognizedStudent.classId === classId) {
+      const studentExists = students.some(
+        (student) => student.id === recognizedStudent.id
+      );
+      if (recognizedStudent && studentExists) {
         await updateDoc(doc(db, 'students', recognizedStudent.id), {
-          attendance: serverTimestamp(),
+          attendance: new Date(),
         });
         setAttendanceResult('Attendance marked successfully');
       } else {
