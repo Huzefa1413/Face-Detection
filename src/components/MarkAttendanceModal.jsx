@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { updateDoc, doc } from 'firebase/firestore';
 import { Modal, Button } from 'react-bootstrap';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 
 const MarkAttendanceModal = ({
   show,

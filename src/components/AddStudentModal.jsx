@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
-import { db, storage } from '../firebase';
+import { db, storage } from '../../firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import axios from 'axios';
