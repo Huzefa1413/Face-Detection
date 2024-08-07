@@ -31,7 +31,7 @@ const MarkAttendanceModal = ({
   }, [cameraOpen]);
 
   const handleStartAttendance = () => {
-    setCameraOpen(true);
+    setCameraOpen(!cameraOpen);
   };
 
   const handleMarkAttendance = async () => {
@@ -132,7 +132,7 @@ const MarkAttendanceModal = ({
             <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
           </>
         )}
-        {attendanceResult && <p>{attendanceResult}</p>}
+        {!cameraOpen && attendanceResult && <p>{attendanceResult}</p>}
       </Modal.Body>
       <Modal.Footer>
         <Button variant="secondary" onClick={handleModalClose}>

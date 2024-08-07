@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import cv2
 import numpy as np
+import cv2
 import firebase_admin
 from firebase_admin import credentials, firestore, storage
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import pickle
+from sklearn.preprocessing import LabelEncoder
+from sklearn.linear_model import SGDClassifier
 
 app = Flask(__name__)
 CORS(app)
@@ -16,18 +18,73 @@ firebase_admin.initialize_app(cred, {'storageBucket': 'face-detection-102af.apps
 db = firestore.client()
 bucket = storage.bucket()
 
-# Load model
-with open('face_recognizer.pkl', 'rb') as f:
-    data = pickle.load(f)
-face_recognizer = data['model']
-label_encoder = data['label_encoder']
-
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
+# Load model
+def load_model():
+    global face_recognizer, label_encoder
+    try:
+        with open('face_recognizer.pkl', 'rb') as f:
+            data = pickle.load(f)
+        face_recognizer = data['model']
+        label_encoder = data['label_encoder']
+    except FileNotFoundError:
+        # Initialize model if not found
+        face_recognizer = SGDClassifier(max_iter=1000, tol=1e-3)
+        label_encoder = LabelEncoder()
+
+# Function to fetch student images
+def fetch_student_images(class_id=None):
+    if class_id:
+        students_ref = db.collection('students').where('classId', '==', class_id).stream()
+    else:
+        students_ref = db.collection('students').stream()
+
+    images = []
+    labels = []
+    for student in students_ref:
+        student_data = student.to_dict()
+        image_url = student_data.get('imageUrl')
+        if image_url:
+            image_name = image_url.split('/')[-1].split('?')[0].split('%2F')[-1]
+            blob = bucket.blob(f'images/{image_name}')
+            image_bytes = blob.download_as_bytes()
+            img_array = np.frombuffer(image_bytes, np.uint8)
+            img = cv2.imdecode(img_array, cv2.IMREAD_GRAYSCALE)
+            images.append(img)
+            labels.append(student.id)
+    return images, labels
+
+# Function to train model incrementally
+def train_model_incremental(images, labels):
+    faces = []
+    face_labels = []
+
+    for img, label in zip(images, labels):
+        detected_faces = face_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+        for (x, y, w, h) in detected_faces:
+            face = img[y:y+h, x:x+w]
+            faces.append(cv2.resize(face, (100, 100)).flatten())
+            face_labels.append(label)
+    
+    if len(faces) == 0:
+        raise ValueError("No faces found for training.")
+    
+    # Encode labels
+    encoded_labels = label_encoder.fit_transform(face_labels)
+    
+    # Update model with new data
+    face_recognizer.partial_fit(faces, encoded_labels, classes=np.unique(encoded_labels))
+    
+    # Save model and label encoder
+    with open('face_recognizer.pkl', 'wb') as f:
+        pickle.dump({'model': face_recognizer, 'label_encoder': label_encoder}, f)
+
+# Endpoint to detect face
 @app.route('/detect_face', methods=['POST'])
 def detect_face():
     file = request.files['image']
-    npimg = np.fromfile(file, np.uint8)
+    npimg = np.frombuffer(file.read(), np.uint8)
     img = cv2.imdecode(npimg, cv2.IMREAD_GRAYSCALE)
     faces = face_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
@@ -41,14 +98,15 @@ def detect_face():
         })
     return jsonify(response)
     
+# Endpoint to recognize face
 @app.route('/recognize_face', methods=['POST'])
 def recognize_face():
     file = request.files['image']
-    npimg = np.fromfile(file, np.uint8)
+    npimg = np.frombuffer(file.read(), np.uint8)
     img = cv2.imdecode(npimg, cv2.IMREAD_GRAYSCALE)
     faces = face_cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     if len(faces) == 0:
-        return jsonify({"error": "No face detected"}),400
+        return jsonify({"error": "No face detected"}), 400
     
     results = []
     for (x, y, w, h) in faces:
@@ -74,5 +132,22 @@ def recognize_face():
         return jsonify(recognized_student)
     return jsonify({"error": "Face not recognized"})
 
+# Endpoint to retrain model
+@app.route('/retrain_model', methods=['POST'])
+def retrain_model():
+    class_id = request.json['classId']
+    images, labels = fetch_student_images(class_id)
+    if len(images) == 0:
+        return jsonify({"error": "No images found for class"}), 400
+    try:
+        train_model_incremental(images, labels)
+        return jsonify({"success": True})
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
 if __name__ == '__main__':
+    # Initial training of the model
+    load_model()
+    images, labels = fetch_student_images()
+    train_model_incremental(images, labels)
     app.run(host='0.0.0.0', port=5000)

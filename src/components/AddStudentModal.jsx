@@ -103,11 +103,17 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       };
       await addDoc(collection(db, 'students'), newStudent);
       onStudentAdded(newStudent);
+
+      // Notify backend to retrain the model with the new student
+      await axios.post('http://127.0.0.1:5000/retrain_model', {
+        classId,
+      });
+
       setStudentName('');
       setStudentEmail('');
       setCapturedImage(null);
       setFaceDetected(false);
-      alert('Student added successfully');
+      alert('Student added and model updated successfully');
       handleClose();
     } catch (error) {
       console.error('Error adding student:', error);
