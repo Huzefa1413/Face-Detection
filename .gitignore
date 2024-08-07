@@ -9,6 +9,7 @@ lerna-debug.log*
 
 /src/firebase.js
 /pythoncode/face-detection-102af-firebase-adminsdk-pal10-1711c61527.json
+
 node_modules
 dist
 dist-ssr
