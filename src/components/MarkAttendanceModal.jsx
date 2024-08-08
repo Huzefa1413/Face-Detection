@@ -58,7 +58,7 @@ const MarkAttendanceModal = ({
         formData.append('image', blob, 'image.png');
 
         const response = await axios.post(
-          `${process.env.URL}/recognize_face`,
+          'http://127.0.0.1:5000/recognize_face',
           formData,
           {
             headers: { 'Content-Type': 'multipart/form-data' },
@@ -66,7 +66,7 @@ const MarkAttendanceModal = ({
         );
 
         const recognizedStudent = response.data;
-        console.log(recognizedStudent);
+        console.log('Student', recognizedStudent);
         const student = students.find(
           (student) => student.id === recognizedStudent.id
         );

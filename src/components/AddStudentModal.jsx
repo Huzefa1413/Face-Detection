@@ -61,7 +61,7 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       formData.append('image', blob, 'image.png');
 
       const response = await axios.post(
-        `${process.env.URL}/detect_face`,
+        'http://127.0.0.1:5000/detect_face',
         formData,
         {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -112,9 +112,12 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       onStudentAdded(newStudent);
 
       // Notify backend to retrain the model with the new student
-      const myresponse = await axios.post(`${process.env.URL}/retrain_model`, {
-        classId,
-      });
+      const myresponse = await axios.post(
+        'http://127.0.0.1:5000/retrain_model',
+        {
+          classId,
+        }
+      );
       console.log(myresponse.data);
       setStudentName('');
       setStudentEmail('');
