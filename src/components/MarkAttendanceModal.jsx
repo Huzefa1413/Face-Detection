@@ -58,7 +58,7 @@ const MarkAttendanceModal = ({
         formData.append('image', blob, 'image.png');
 
         const response = await axios.post(
-          'http://127.0.0.1:5000/recognize_face',
+          `${process.env.URL}/recognize_face`,
           formData,
           {
             headers: { 'Content-Type': 'multipart/form-data' },

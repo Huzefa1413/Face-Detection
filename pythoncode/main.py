@@ -7,10 +7,14 @@ from flask_cors import CORS
 import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
+# from pyngrok import ngrok
 
 app = Flask(__name__)
 CORS(app)
 
+# port_no = 5000
+# ngrok.set_auth_token('2kMw6HHJRfJPxsrntkrBrP8HzSE_3qjYUrwDHBZM7VfvVLyAH')
+# public_url = ngrok.connect(port_no).public_url
 # Initialize Firebase
 cred = credentials.Certificate("face-detection-102af-firebase-adminsdk-pal10-1711c61527.json")
 firebase_admin.initialize_app(cred, {'storageBucket': 'face-detection-102af.appspot.com'})
@@ -147,4 +151,5 @@ if __name__ == '__main__':
     images, labels = fetch_student_images()
     train_model(images, labels)
     load_model()
-    app.run(host='0.0.0.0', port=5000)
+    # http://127.0.0.1:5000/retrain_model
+    app.run(port=5000)
