@@ -90,8 +90,8 @@ const MarkAttendanceModal = ({
           setLoading(false);
         }
       } catch (error) {
-        console.error('Error recognizing face:', error);
-        setAttendanceResult('Error recognizing face');
+        console.error('Error recognizing face:', error.response.data.error);
+        setAttendanceResult(error?.response?.data?.error);
         setLoading(false);
       }
     }
