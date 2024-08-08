@@ -4,6 +4,7 @@ import { db, storage } from '../../firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
 import axios from 'axios';
+import Loader from './Loader';
 
 const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
   const [studentName, setStudentName] = useState('');
@@ -11,6 +12,7 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
   const [capturedImage, setCapturedImage] = useState(null);
   const [faceDetected, setFaceDetected] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -53,6 +55,7 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
 
   const detectFace = async (imageDataUrl) => {
     try {
+      setLoading(true);
       const blob = await fetch(imageDataUrl).then((res) => res.blob());
       const formData = new FormData();
       formData.append('image', blob, 'image.png');
@@ -67,13 +70,16 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
 
       if (response.data.length > 0) {
         setFaceDetected(true);
+        setLoading(false);
       } else {
         alert('No face detected. Please try again.');
         setFaceDetected(false);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error detecting face:', error);
       setFaceDetected(false);
+      setLoading(false);
     }
   };
 
@@ -88,6 +94,7 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       return;
     }
     try {
+      setLoading(true);
       const imageRef = ref(storage, `images/${Date.now()}.png`);
       const response = await fetch(capturedImage);
       const blob = await response.blob();
@@ -105,18 +112,23 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       onStudentAdded(newStudent);
 
       // Notify backend to retrain the model with the new student
-      await axios.post('http://127.0.0.1:5000/retrain_model', {
-        classId,
-      });
-
+      const myresponse = await axios.post(
+        'http://127.0.0.1:5000/retrain_model',
+        {
+          classId,
+        }
+      );
+      console.log(myresponse.data);
       setStudentName('');
       setStudentEmail('');
       setCapturedImage(null);
       setFaceDetected(false);
-      alert('Student added and model updated successfully');
+      alert('Student added successfully');
       handleClose();
+      setLoading(false);
     } catch (error) {
       console.error('Error adding student:', error);
+      setLoading(false);
     }
   };
 
@@ -125,71 +137,75 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       <Modal.Header closeButton>
         <Modal.Title>Add Student</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={handleSaveStudent}>
-          <Form.Group className="mb-3">
-            <Form.Label>Student Name</Form.Label>
-            <Form.Control
-              type="text"
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
-              placeholder="Enter student name"
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Student Email</Form.Label>
-            <Form.Control
-              type="email"
-              value={studentEmail}
-              onChange={(e) => setStudentEmail(e.target.value)}
-              placeholder="Enter student email"
-              required
-            />
-          </Form.Group>
-          <Button
-            variant="primary"
-            onClick={handleCaptureImage}
-            className="mb-3"
-          >
-            {cameraOpen ? 'Capture Image' : 'Open Camera'}
-          </Button>
-          {cameraOpen && (
-            <Button
-              variant="danger"
-              onClick={handleCloseCamera}
-              className="mb-3 ms-2"
-            >
-              Close Camera
-            </Button>
-          )}
-          {!cameraOpen && capturedImage && (
-            <div className="mt-3">
-              <img
-                src={capturedImage}
-                alt="Captured"
-                className="img-thumbnail"
-                style={{ width: '150px', height: '150px' }}
+      {loading ? (
+        <Loader />
+      ) : (
+        <Modal.Body>
+          <Form onSubmit={handleSaveStudent}>
+            <Form.Group className="mb-3">
+              <Form.Label>Student Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                placeholder="Enter student name"
+                required
               />
-            </div>
-          )}
-          {!cameraOpen && faceDetected && (
-            <Button type="submit" variant="success" className="mt-2">
-              Save Student
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Student Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={studentEmail}
+                onChange={(e) => setStudentEmail(e.target.value)}
+                placeholder="Enter student email"
+                required
+              />
+            </Form.Group>
+            <Button
+              variant="primary"
+              onClick={handleCaptureImage}
+              className="mb-3"
+            >
+              {cameraOpen ? 'Capture Image' : 'Open Camera'}
             </Button>
-          )}
-        </Form>
-        <video
-          ref={videoRef}
-          style={{
-            display: cameraOpen ? 'block' : 'none',
-            width: '100%',
-            maxWidth: '400px',
-          }}
-          className="mb-4"
-        ></video>
-        <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-      </Modal.Body>
+            {cameraOpen && (
+              <Button
+                variant="danger"
+                onClick={handleCloseCamera}
+                className="mb-3 ms-2"
+              >
+                Close Camera
+              </Button>
+            )}
+            {!cameraOpen && capturedImage && (
+              <div className="mt-3">
+                <img
+                  src={capturedImage}
+                  alt="Captured"
+                  className="img-thumbnail"
+                  style={{ width: '150px', height: '150px' }}
+                />
+              </div>
+            )}
+            {!cameraOpen && faceDetected && (
+              <Button type="submit" variant="success" className="mt-2">
+                Save Student
+              </Button>
+            )}
+          </Form>
+          <video
+            ref={videoRef}
+            style={{
+              display: cameraOpen ? 'block' : 'none',
+              width: '100%',
+              maxWidth: '400px',
+            }}
+            className="mb-4"
+          ></video>
+          <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+        </Modal.Body>
+      )}
     </Modal>
   );
 };

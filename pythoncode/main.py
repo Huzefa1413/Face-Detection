@@ -21,11 +21,8 @@ bucket = storage.bucket()
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 
 # Function to fetch student images
-def fetch_student_images(class_id=None):
-    if class_id:
-        students_ref = db.collection('students').where('classId', '==', class_id).stream()
-    else:
-        students_ref = db.collection('students').stream()
+def fetch_student_images():
+    students_ref = db.collection('students').stream()
 
     images = []
     labels = []
@@ -134,10 +131,10 @@ def recognize_face():
 # Endpoint to retrain model
 @app.route('/retrain_model', methods=['POST'])
 def retrain_model():
-    class_id = request.json['classId']
-    images, labels = fetch_student_images(class_id)
+    # class_id = request.json['classId']
+    images, labels = fetch_student_images()
     if len(images) == 0:
-        return jsonify({"error": "No images found for class"}), 400
+        return jsonify({"error": "No images found"}), 400
     try:
         train_model(images, labels)
         return jsonify({"success": True})

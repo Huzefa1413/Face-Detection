@@ -3,6 +3,7 @@ import axios from 'axios';
 import { updateDoc, doc } from 'firebase/firestore';
 import { Modal, Button } from 'react-bootstrap';
 import { db } from '../../firebase';
+import Loader from './Loader';
 
 const MarkAttendanceModal = ({
   show,
@@ -13,6 +14,7 @@ const MarkAttendanceModal = ({
   const [capturedImage, setCapturedImage] = useState(null);
   const [attendanceResult, setAttendanceResult] = useState(null);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -50,6 +52,7 @@ const MarkAttendanceModal = ({
       setCameraOpen(false);
 
       try {
+        setLoading(true);
         const blob = await fetch(imageUrl).then((res) => res.blob());
         const formData = new FormData();
         formData.append('image', blob, 'image.png');
@@ -81,12 +84,15 @@ const MarkAttendanceModal = ({
             );
             onAttendanceMarked();
           }
+          setLoading(false);
         } else {
           setAttendanceResult('You do not belong to this class');
+          setLoading(false);
         }
       } catch (error) {
         console.error('Error recognizing face:', error);
         setAttendanceResult('Error recognizing face');
+        setLoading(false);
       }
     }
   };
@@ -111,29 +117,34 @@ const MarkAttendanceModal = ({
       <Modal.Header closeButton>
         <Modal.Title>Mark Attendance</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <Button onClick={handleStartAttendance} className="mb-3">
-          {cameraOpen ? 'Close Camera' : 'Start Attendance'}
-        </Button>
-        {cameraOpen && (
-          <>
-            <Button onClick={handleMarkAttendance} className="mb-3">
-              Mark Attendance
-            </Button>
-            <video
-              ref={videoRef}
-              style={{
-                display: cameraOpen ? 'block' : 'none',
-                width: '100%',
-                maxWidth: '400px',
-              }}
-              className="mb-4"
-            ></video>
-            <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-          </>
-        )}
-        {!cameraOpen && attendanceResult && <p>{attendanceResult}</p>}
-      </Modal.Body>
+      {loading ? (
+        <Loader />
+      ) : (
+        <Modal.Body>
+          <Button onClick={handleStartAttendance} className="mb-3">
+            {cameraOpen ? 'Close Camera' : 'Start Attendance'}
+          </Button>
+          {cameraOpen && (
+            <>
+              <Button onClick={handleMarkAttendance} className="mb-3">
+                Mark Attendance
+              </Button>
+              <video
+                ref={videoRef}
+                style={{
+                  display: cameraOpen ? 'block' : 'none',
+                  width: '100%',
+                  maxWidth: '400px',
+                }}
+                className="mb-4"
+              ></video>
+              <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+            </>
+          )}
+          {!cameraOpen && attendanceResult && <p>{attendanceResult}</p>}
+        </Modal.Body>
+      )}
+
       <Modal.Footer>
         <Button variant="secondary" onClick={handleModalClose}>
           Close

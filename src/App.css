@@ -14,3 +14,35 @@
   background-color: #0056b3;
   border-color: #004085;
 }
+
+.loader {
+  border: 16px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 16px solid #3498db;
+  width: 60px;
+  height: 60px;
+  animation: spin 3s linear infinite;
+  margin: 50px auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(360deg);
+  }
+
+  50% {
+    transform: rotate(720deg);
+  }
+
+  75% {
+    transform: rotate(1080deg);
+  }
+
+  100% {
+    transform: rotate(1440deg);
+  }
+}

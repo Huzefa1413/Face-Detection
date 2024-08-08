@@ -9,16 +9,19 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom'; // Ensure you have react-router-dom installed and set up
+import Loader from './Loader';
 
 const Dashboard = () => {
   const [classes, setClasses] = useState([]);
   const [showAddClassForm, setShowAddClassForm] = useState(false);
   const [newClassName, setNewClassName] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchClasses = async () => {
       try {
+        setLoading(true);
         const classesCollection = query(
           collection(db, 'classes'),
           orderBy('createdOn', 'desc')
@@ -27,8 +30,10 @@ const Dashboard = () => {
         setClasses(
           classDocs.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
         );
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching classes:', error);
+        setLoading(false);
       }
     };
     fetchClasses();
@@ -41,6 +46,7 @@ const Dashboard = () => {
       return;
     }
     try {
+      setLoading(true);
       const newClass = {
         name: newClassName,
         createdOn: serverTimestamp(),
@@ -49,8 +55,10 @@ const Dashboard = () => {
       setClasses([...classes, { id: docRef.id, ...newClass }]);
       setNewClassName('');
       setShowAddClassForm(false);
+      setLoading(false);
     } catch (error) {
       console.error('Error adding class:', error);
+      setLoading(false);
     }
   };
 
@@ -61,59 +69,65 @@ const Dashboard = () => {
   return (
     <div className="container mt-5">
       <h2 className="mb-4">Classes</h2>
-      {classes.length > 0 ? (
-        <ul className="list-group mb-4">
-          {classes.map((cls) => (
-            <li
-              key={cls.id}
-              className="list-group-item d-flex justify-content-between align-items-center"
-            >
-              {cls.name}
-              <button
-                className="btn btn-primary"
-                onClick={() => handleClassClick(cls.id)}
-              >
-                View Class
-              </button>
-            </li>
-          ))}
-        </ul>
+      {loading ? (
+        <Loader />
       ) : (
-        <p className="text-muted">
-          No classes available. Add a new class to get started.
-        </p>
-      )}
-      <button
-        className="btn btn-success mb-3"
-        onClick={() => setShowAddClassForm(true)}
-      >
-        Add Class
-      </button>
-      {showAddClassForm && (
-        <form onSubmit={handleAddClass} className="card p-4">
-          <div className="form-group">
-            <label htmlFor="newClassName">Class Name</label>
-            <input
-              type="text"
-              id="newClassName"
-              value={newClassName}
-              onChange={(e) => setNewClassName(e.target.value)}
-              className="form-control"
-              placeholder="Enter class name"
-              required
-            />
-          </div>
-          <button type="submit" className="btn btn-primary mt-3">
-            Save Class
-          </button>
+        <>
+          {classes.length > 0 ? (
+            <ul className="list-group mb-4">
+              {classes.map((cls) => (
+                <li
+                  key={cls.id}
+                  className="list-group-item d-flex justify-content-between align-items-center"
+                >
+                  {cls.name}
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => handleClassClick(cls.id)}
+                  >
+                    View Class
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted">
+              No classes available. Add a new class to get started.
+            </p>
+          )}
           <button
-            type="button"
-            className="btn btn-secondary mt-3"
-            onClick={() => setShowAddClassForm(false)}
+            className="btn btn-success mb-3"
+            onClick={() => setShowAddClassForm(true)}
           >
-            Cancel
+            Add Class
           </button>
-        </form>
+          {showAddClassForm && (
+            <form onSubmit={handleAddClass} className="card p-4">
+              <div className="form-group">
+                <label htmlFor="newClassName">Class Name</label>
+                <input
+                  type="text"
+                  id="newClassName"
+                  value={newClassName}
+                  onChange={(e) => setNewClassName(e.target.value)}
+                  className="form-control"
+                  placeholder="Enter class name"
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-primary mt-3">
+                Save Class
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary mt-3"
+                onClick={() => setShowAddClassForm(false)}
+              >
+                Cancel
+              </button>
+            </form>
+          )}
+        </>
       )}
     </div>
   );
