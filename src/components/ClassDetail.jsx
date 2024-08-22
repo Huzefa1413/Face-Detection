@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { db } from '../../firebase';
 import {
   collection,
@@ -7,7 +7,6 @@ import {
   where,
   getDocs,
   getDoc,
-  updateDoc,
   doc,
 } from 'firebase/firestore';
 import AddStudentModal from './AddStudentModal';
@@ -89,6 +88,9 @@ const ClassDetail = () => {
             <Button onClick={handleShowMarkAttendanceModal} className="mb-3">
               Start Attendance
             </Button>
+            <Link to={`/viewattendance/${classId}`}>
+              <Button className="mb-3">View Attendance</Button>
+            </Link>
             <MarkAttendanceModal
               show={showMarkAttendanceModal}
               handleClose={handleCloseMarkAttendanceModal}
@@ -102,9 +104,7 @@ const ClassDetail = () => {
               {students.map((student) => (
                 <li
                   key={student.id}
-                  className={`list-group-item d-flex justify-content-between align-items-center ${
-                    student.attendance ? 'bg-success text-white' : ''
-                  }`}
+                  className="list-group-item d-flex justify-content-between align-items-center"
                 >
                   <div>
                     <strong>{student.name}</strong> ({student.email})

@@ -3,6 +3,7 @@ import { Modal, Button, Form } from 'react-bootstrap';
 import { db, storage } from '../../firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
+import { URL } from '../../config';
 import axios from 'axios';
 import Loader from './Loader';
 
@@ -60,13 +61,9 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       const formData = new FormData();
       formData.append('image', blob, 'image.png');
 
-      const response = await axios.post(
-        'http://127.0.0.1:5000/detect_face',
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      );
+      const response = await axios.post(`${URL}/detect_face`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       if (response.data.length > 0) {
         setFaceDetected(true);
@@ -107,17 +104,15 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
         classId,
         createdOn: new Date(),
         imageUrl,
+        attendance: [], // Initialize attendance as an empty array
       };
       await addDoc(collection(db, 'students'), newStudent);
       onStudentAdded(newStudent);
 
       // Notify backend to retrain the model with the new student
-      const myresponse = await axios.post(
-        'http://127.0.0.1:5000/retrain_model',
-        {
-          classId,
-        }
-      );
+      const myresponse = await axios.post(`${URL}/retrain_model`, {
+        classId,
+      });
       console.log(myresponse.data);
       setStudentName('');
       setStudentEmail('');

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { updateDoc, doc } from 'firebase/firestore';
 import { Modal, Button } from 'react-bootstrap';
 import { db } from '../../firebase';
+import { URL } from '../../config';
 import Loader from './Loader';
 
 const MarkAttendanceModal = ({
@@ -57,13 +58,9 @@ const MarkAttendanceModal = ({
         const formData = new FormData();
         formData.append('image', blob, 'image.png');
 
-        const response = await axios.post(
-          'http://127.0.0.1:5000/recognize_face',
-          formData,
-          {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          }
-        );
+        const response = await axios.post(`${URL}/recognize_face`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
 
         const recognizedStudent = response.data;
         console.log('Student', recognizedStudent);
@@ -71,13 +68,44 @@ const MarkAttendanceModal = ({
           (student) => student.id === recognizedStudent.id
         );
         if (recognizedStudent && student) {
+          const currentDate = new Date();
+          const timestamp = currentDate.toISOString();
+
           if (student.attendance) {
-            setAttendanceResult(
-              `Attendance already marked for ${student.name}`
+            // Check if attendance is already marked for today
+            const alreadyMarked = student.attendance.some(
+              (record) =>
+                record.date === currentDate.toISOString().split('T')[0]
             );
+            if (alreadyMarked) {
+              setAttendanceResult(
+                `Attendance already marked for ${student.name} today`
+              );
+            } else {
+              // Update the Firestore document with new attendance record
+              await updateDoc(doc(db, 'students', recognizedStudent.id), {
+                attendance: [
+                  ...student.attendance,
+                  {
+                    date: currentDate.toISOString().split('T')[0],
+                    time: timestamp,
+                  },
+                ],
+              });
+              setAttendanceResult(
+                `Attendance marked successfully for ${student.name}`
+              );
+              onAttendanceMarked();
+            }
           } else {
+            // If no attendance records exist, initialize the array
             await updateDoc(doc(db, 'students', recognizedStudent.id), {
-              attendance: true,
+              attendance: [
+                {
+                  date: currentDate.toISOString().split('T')[0],
+                  time: timestamp,
+                },
+              ],
             });
             setAttendanceResult(
               `Attendance marked successfully for ${student.name}`
@@ -90,7 +118,7 @@ const MarkAttendanceModal = ({
           setLoading(false);
         }
       } catch (error) {
-        console.error('Error recognizing face:', error.response.data.error);
+        console.error('Error recognizing face:', error);
         setAttendanceResult(error?.response?.data?.error);
         setLoading(false);
       }

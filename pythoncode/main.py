@@ -7,6 +7,7 @@ from flask_cors import CORS
 import pickle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.svm import SVC
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -64,17 +65,25 @@ def train_model(images, labels):
     recognizer = SVC(kernel='linear', probability=True)
     recognizer.fit(faces, encoded_labels)
     
-    # Save model and label encoder
-    with open('face_recognizer.pkl', 'wb') as f:
-        pickle.dump({'model': recognizer, 'label_encoder': label_encoder}, f)
+    model_buffer = io.BytesIO()
+    pickle.dump({'model': recognizer, 'label_encoder': label_encoder}, model_buffer)
+    model_buffer.seek(0)
 
-# Load model
+    # Upload the model to Firebase Storage
+    blob = bucket.blob('models/face_recognizer.pkl')
+    blob.upload_from_file(model_buffer, content_type='application/octet-stream')
+    print("Model uploaded to Firebase Storage.")
+
+# Load model directly from Firebase Storage
 def load_model():
     global face_recognizer, label_encoder
-    with open('face_recognizer.pkl', 'rb') as f:
-        data = pickle.load(f)
+    blob = bucket.blob('models/face_recognizer.pkl')
+    model_bytes = blob.download_as_bytes()
+    model_buffer = io.BytesIO(model_bytes)
+    data = pickle.load(model_buffer)
     face_recognizer = data['model']
     label_encoder = data['label_encoder']
+    print("Model loaded from Firebase Storage.")
 
 # Endpoint to detect face
 @app.route('/detect_face', methods=['POST'])

@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [classes, setClasses] = useState([]);
   const [showAddClassForm, setShowAddClassForm] = useState(false);
   const [newClassName, setNewClassName] = useState('');
+  const [classStartDate, setClassStartDate] = useState(''); // New state for class start date
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -41,19 +42,21 @@ const Dashboard = () => {
 
   const handleAddClass = async (e) => {
     e.preventDefault();
-    if (newClassName.trim() === '') {
-      alert('Class name cannot be empty');
+    if (newClassName.trim() === '' || classStartDate.trim() === '') {
+      alert('Class name and start date cannot be empty');
       return;
     }
     try {
       setLoading(true);
       const newClass = {
         name: newClassName,
+        startDate: new Date(classStartDate), // Store the start date as a Date object
         createdOn: serverTimestamp(),
       };
       const docRef = await addDoc(collection(db, 'classes'), newClass);
       setClasses([...classes, { id: docRef.id, ...newClass }]);
       setNewClassName('');
+      setClassStartDate(''); // Reset the start date field
       setShowAddClassForm(false);
       setLoading(false);
     } catch (error) {
@@ -112,6 +115,17 @@ const Dashboard = () => {
                   onChange={(e) => setNewClassName(e.target.value)}
                   className="form-control"
                   placeholder="Enter class name"
+                  required
+                />
+              </div>
+              <div className="form-group mt-3">
+                <label htmlFor="classStartDate">Class Starting Date</label>
+                <input
+                  type="date"
+                  id="classStartDate"
+                  value={classStartDate}
+                  onChange={(e) => setClassStartDate(e.target.value)}
+                  className="form-control"
                   required
                 />
               </div>
