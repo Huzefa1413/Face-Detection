@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import Navbar from './Navbar';
+import { Container, Card, Form, Button } from 'react-bootstrap';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -19,49 +21,48 @@ const Login = () => {
   };
 
   return (
-    <div className="d-flex justify-content-center align-items-center vh-100">
-      <div className="card p-4" style={{ width: '300px' }}>
-        <h2 className="card-title text-center">Login</h2>
-        <form onSubmit={handleLogin}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              required
-              className="form-control"
-            />
+    <>
+      <Navbar />
+      <Container className="d-flex v-100 align-items-center justify-content-center">
+        <Card className="p-4 m-5 login">
+          <Card.Title className="text-center">Login</Card.Title>
+          <Form onSubmit={handleLogin}>
+            <Form.Group controlId="email">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="password">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+              />
+            </Form.Group>
+            <Button type="submit" className="btn btn-primary btn-block mt-3">
+              Login
+            </Button>
+          </Form>
+          <div className="mt-4 text-center">
+            <p className="text-muted">Use the following credentials:</p>
+            <p>
+              <strong>Email:</strong> admin@saylani.com
+            </p>
+            <p>
+              <strong>Password:</strong> saylani_admin
+            </p>
           </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              required
-              className="form-control"
-            />
-          </div>
-          <button type="submit" className="btn btn-primary btn-block">
-            Login
-          </button>
-        </form>
-        <div className="mt-4 text-center">
-          <p className="text-muted">Use the following credentials:</p>
-          <p>
-            <strong>Email:</strong> admin@saylani.com
-          </p>
-          <p>
-            <strong>Password:</strong> saylani_admin
-          </p>
-        </div>
-      </div>
-    </div>
+        </Card>
+      </Container>
+    </>
   );
 };
 

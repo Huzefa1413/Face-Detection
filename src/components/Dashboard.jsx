@@ -8,14 +8,17 @@ import {
   addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { useNavigate } from 'react-router-dom'; // Ensure you have react-router-dom installed and set up
+import { useNavigate } from 'react-router-dom';
 import Loader from './Loader';
+import { Container, Button, Card, Form, ListGroup } from 'react-bootstrap';
+import Navbar from './Navbar'; // Assuming you have a Navbar component
 
 const Dashboard = () => {
   const [classes, setClasses] = useState([]);
   const [showAddClassForm, setShowAddClassForm] = useState(false);
   const [newClassName, setNewClassName] = useState('');
-  const [classStartDate, setClassStartDate] = useState(''); // New state for class start date
+  const [classStartDate, setClassStartDate] = useState('');
+  const [teacherName, setTeacherName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -31,9 +34,9 @@ const Dashboard = () => {
         setClasses(
           classDocs.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
         );
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching classes:', error);
+      } finally {
         setLoading(false);
       }
     };
@@ -42,25 +45,31 @@ const Dashboard = () => {
 
   const handleAddClass = async (e) => {
     e.preventDefault();
-    if (newClassName.trim() === '' || classStartDate.trim() === '') {
-      alert('Class name and start date cannot be empty');
+    if (
+      newClassName.trim() === '' ||
+      classStartDate.trim() === '' ||
+      teacherName.trim() === ''
+    ) {
+      alert('Class name, start date or teachers name cannot be empty');
       return;
     }
     try {
       setLoading(true);
       const newClass = {
         name: newClassName,
-        startDate: new Date(classStartDate), // Store the start date as a Date object
+        startDate: new Date(classStartDate),
+        teacherName: teacherName,
         createdOn: serverTimestamp(),
       };
       const docRef = await addDoc(collection(db, 'classes'), newClass);
       setClasses([...classes, { id: docRef.id, ...newClass }]);
       setNewClassName('');
-      setClassStartDate(''); // Reset the start date field
+      setClassStartDate('');
+      setTeacherName('');
       setShowAddClassForm(false);
-      setLoading(false);
     } catch (error) {
       console.error('Error adding class:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -70,80 +79,103 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mt-5">
-      <h2 className="mb-4">Classes</h2>
-      {loading ? (
-        <Loader />
-      ) : (
-        <>
-          {classes.length > 0 ? (
-            <ul className="list-group mb-4">
-              {classes.map((cls) => (
-                <li
-                  key={cls.id}
-                  className="list-group-item d-flex justify-content-between align-items-center"
-                >
-                  {cls.name}
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => handleClassClick(cls.id)}
+    <>
+      <Navbar />
+      <Container className="my-5">
+        <h2 className="mb-4">Classes</h2>
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            {classes.length > 0 ? (
+              <div className="row mb-4">
+                {classes.map((cls) => (
+                  <div className="col-md-4 mb-3" key={cls.id}>
+                    <Card className="h-100">
+                      <Card.Body>
+                        <Card.Title className="text-center">
+                          {cls.name}
+                        </Card.Title>
+                        <Card.Text>
+                          <strong>Teacher's Name:</strong> {cls.teacherName}
+                        </Card.Text>
+                        <Card.Text>
+                          <strong>Starting Date:</strong>{' '}
+                          {cls.startDate.toDate().toLocaleDateString()}
+                        </Card.Text>
+                        <Button
+                          variant="primary"
+                          onClick={() => handleClassClick(cls.id)}
+                        >
+                          View Class
+                        </Button>
+                      </Card.Body>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted">
+                No classes available. Add a new class to get started.
+              </p>
+            )}
+            <Button
+              variant="success"
+              className="mb-3"
+              onClick={() => setShowAddClassForm(true)}
+            >
+              Add Class
+            </Button>
+            {showAddClassForm && (
+              <Card className="p-4">
+                <Form onSubmit={handleAddClass}>
+                  <Form.Group controlId="newClassName">
+                    <Form.Label>Class Name</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={newClassName}
+                      onChange={(e) => setNewClassName(e.target.value)}
+                      placeholder="Enter class name"
+                      required
+                    />
+                  </Form.Group>
+                  <Form.Group controlId="teacherName" className="mt-3">
+                    <Form.Label>Teacher's Name</Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={newClassName}
+                      onChange={(e) => setTeacherName(e.target.value)}
+                      placeholder="Enter teacher's name"
+                      required
+                    />
+                  </Form.Group>
+                  <Form.Group controlId="classStartDate" className="mt-3">
+                    <Form.Label>Class Starting Date</Form.Label>
+                    <Form.Control
+                      type="date"
+                      value={classStartDate}
+                      onChange={(e) => setClassStartDate(e.target.value)}
+                      required
+                    />
+                  </Form.Group>
+                  <Button type="submit" variant="primary" className="mt-3">
+                    Save Class
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="mt-3 ms-2"
+                    onClick={() => setShowAddClassForm(false)}
                   >
-                    View Class
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted">
-              No classes available. Add a new class to get started.
-            </p>
-          )}
-          <button
-            className="btn btn-success mb-3"
-            onClick={() => setShowAddClassForm(true)}
-          >
-            Add Class
-          </button>
-          {showAddClassForm && (
-            <form onSubmit={handleAddClass} className="card p-4">
-              <div className="form-group">
-                <label htmlFor="newClassName">Class Name</label>
-                <input
-                  type="text"
-                  id="newClassName"
-                  value={newClassName}
-                  onChange={(e) => setNewClassName(e.target.value)}
-                  className="form-control"
-                  placeholder="Enter class name"
-                  required
-                />
-              </div>
-              <div className="form-group mt-3">
-                <label htmlFor="classStartDate">Class Starting Date</label>
-                <input
-                  type="date"
-                  id="classStartDate"
-                  value={classStartDate}
-                  onChange={(e) => setClassStartDate(e.target.value)}
-                  className="form-control"
-                  required
-                />
-              </div>
-              <button type="submit" className="btn btn-primary mt-3">
-                Save Class
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary mt-3"
-                onClick={() => setShowAddClassForm(false)}
-              >
-                Cancel
-              </button>
-            </form>
-          )}
-        </>
-      )}
-    </div>
+                    Cancel
+                  </Button>
+                </Form>
+              </Card>
+            )}
+          </>
+        )}
+      </Container>
+    </>
   );
 };
 

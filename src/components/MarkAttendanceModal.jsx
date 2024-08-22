@@ -3,7 +3,7 @@ import axios from 'axios';
 import { updateDoc, doc } from 'firebase/firestore';
 import { Modal, Button } from 'react-bootstrap';
 import { db } from '../../firebase';
-import { URL } from '../../config';
+import { URL } from '../config';
 import Loader from './Loader';
 
 const MarkAttendanceModal = ({
@@ -154,7 +154,7 @@ const MarkAttendanceModal = ({
           </Button>
           {cameraOpen && (
             <>
-              <Button onClick={handleMarkAttendance} className="mb-3">
+              <Button onClick={handleMarkAttendance} className="mb-3 mx-2">
                 Mark Attendance
               </Button>
               <video

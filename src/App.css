@@ -1,20 +1,69 @@
-/* Login.css */
+@import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
 
-.card {
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+body {
+  font-family: 'Rubik', sans-serif !important;
+  font-optical-sizing: auto !important;
+  font-style: normal !important;
+  background-color: #f4f8ff !important;
 }
 
-.btn-primary {
-  background-color: #007bff;
-  border-color: #007bff;
+/* Navbar */
+.mynavbar {
+  /* background-color: red; */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px 20px;
+}
+.mynavbar img {
+  max-width: 350px;
+}
+/* login */
+.login {
+  max-width: 350px;
+  box-shadow: 3px 6px 14px 0px rgb(180, 200, 208);
+}
+.login .card-title {
+  font-size: 30px;
+  text-transform: uppercase;
+  font-style: italic;
+  margin-bottom: 25px;
+}
+.login form > div {
+  /* background-color: darkblue; */
+  margin-bottom: 15px;
 }
 
-.btn-primary:hover {
-  background-color: #0056b3;
-  border-color: #004085;
+/* classdetail */
+.student-card .card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
 }
-
+.student-card .card-title {
+  color: #0772b8;
+  background-color: rgba(192, 192, 192, 0.418);
+  padding: 5px;
+  width: fit-content;
+  margin-bottom: 15px !important;
+}
+.student-card img.pic {
+  border: 5px solid green;
+  width: 100px !important;
+  height: 100px !important;
+  margin-bottom: 25px;
+}
+.student-card .name {
+  text-transform: uppercase;
+  font-size: 20px;
+}
+.student-card .classname {
+  margin-bottom: 10px;
+}
+.student-card .rollNo {
+  font-size: 20px;
+}
 .loader {
   border: 16px solid #f3f3f3;
   border-radius: 50%;

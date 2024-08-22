@@ -1,5 +1,6 @@
 import React from 'react';
 import './App.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -14,7 +15,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/" element={<Login />} />
         <Route path="/class/:classId" element={<ClassDetail />} />
-<Route path='/viewattendance/:classId' element={<ViewAttendance/>}/>
+        <Route path="/viewattendance/:classId" element={<ViewAttendance />} />
       </Routes>
     </Router>
   );

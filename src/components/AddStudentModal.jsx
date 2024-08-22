@@ -3,13 +3,13 @@ import { Modal, Button, Form } from 'react-bootstrap';
 import { db, storage } from '../../firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { ref, getDownloadURL, uploadBytes } from 'firebase/storage';
-import { URL } from '../../config';
+import { URL } from '../config';
 import axios from 'axios';
 import Loader from './Loader';
 
 const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
   const [studentName, setStudentName] = useState('');
-  const [studentEmail, setStudentEmail] = useState('');
+  const [rollNo, setRollNo] = useState(''); // Changed to rollNo
   const [capturedImage, setCapturedImage] = useState(null);
   const [faceDetected, setFaceDetected] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -84,7 +84,7 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
     e.preventDefault();
     if (
       studentName.trim() === '' ||
-      studentEmail.trim() === '' ||
+      rollNo.trim() === '' || // Validating roll number
       !capturedImage
     ) {
       alert('Student details and image are required');
@@ -100,7 +100,7 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
 
       const newStudent = {
         name: studentName,
-        email: studentEmail,
+        rollNo, // Added roll number to the new student object
         classId,
         createdOn: new Date(),
         imageUrl,
@@ -115,7 +115,7 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
       });
       console.log(myresponse.data);
       setStudentName('');
-      setStudentEmail('');
+      setRollNo(''); // Reset roll number
       setCapturedImage(null);
       setFaceDetected(false);
       alert('Student added successfully');
@@ -148,12 +148,12 @@ const AddStudentModal = ({ show, handleClose, classId, onStudentAdded }) => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Student Email</Form.Label>
+              <Form.Label>Roll Number</Form.Label>
               <Form.Control
-                type="email"
-                value={studentEmail}
-                onChange={(e) => setStudentEmail(e.target.value)}
-                placeholder="Enter student email"
+                type="text"
+                value={rollNo}
+                onChange={(e) => setRollNo(e.target.value)}
+                placeholder="Enter student roll number"
                 required
               />
             </Form.Group>

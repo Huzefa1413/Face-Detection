@@ -10,6 +10,8 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import Loader from './Loader';
+import { Container, Table } from 'react-bootstrap';
+import Navbar from './Navbar';
 
 const ViewAttendance = () => {
   const { classId } = useParams();
@@ -70,64 +72,70 @@ const ViewAttendance = () => {
   };
 
   return (
-    <div className="container mt-4">
-      {loading ? (
-        <Loader />
-      ) : (
-        <>
-          <h1 className="text-center">{className} Attendance</h1>
-          {students.length > 0 ? (
-            <table className="table table-striped">
-              <thead>
-                <tr>
-                  <th>Student Name</th>
-                  <th>Email</th>
-                  {dateRange.map((date) => (
-                    <th key={date}>{date}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {students.map((student) => (
-                  <tr key={student.id}>
-                    <td>{student.name}</td>
-                    <td>{student.email}</td>
-                    {dateRange.map((date) => {
-                      // Find attendance records for the current date
-                      const attendanceRecord = student.attendance?.find(
-                        (record) => record.date === date
-                      );
-                      return (
-                        <td
-                          key={date}
-                          className={
-                            attendanceRecord
-                              ? 'bg-success text-white'
-                              : 'bg-danger text-white'
-                          }
-                        >
-                          {attendanceRecord ? (
-                            <div>
-                              ✔️
-                              <br />
-                              {formatTime(attendanceRecord.time)}
-                            </div>
-                          ) : (
-                            <div>❌</div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No students in this class.</p>
-          )}
-        </>
-      )}
-    </div>
+    <>
+      <Navbar />
+      <Container className="mt-4">
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            <h1 className="text-center">{className}</h1>
+            <h2 className="text-center mb-3">Attendance</h2>
+            {students.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <Table striped responsive>
+                  <thead>
+                    <tr>
+                      <th>Student Name</th>
+                      <th>Roll No</th>
+                      {dateRange.map((date) => (
+                        <th key={date}>{date}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => (
+                      <tr key={student.id}>
+                        <td>{student.name}</td>
+                        <td>{student.rollNo}</td>
+                        {dateRange.map((date) => {
+                          // Find attendance records for the current date
+                          const attendanceRecord = student.attendance?.find(
+                            (record) => record.date === date
+                          );
+                          return (
+                            <td
+                              key={date}
+                              className={
+                                attendanceRecord
+                                  ? 'bg-success text-white'
+                                  : 'bg-danger text-white'
+                              }
+                            >
+                              {attendanceRecord ? (
+                                <div>
+                                  ✔️
+                                  <br />
+                                  {formatTime(attendanceRecord.time)}
+                                </div>
+                              ) : (
+                                <div>❌</div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            ) : (
+              <p>No students in this class.</p>
+            )}
+          </>
+        )}
+      </Container>
+    </>
   );
 };
 

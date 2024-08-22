@@ -11,8 +11,10 @@ import {
 } from 'firebase/firestore';
 import AddStudentModal from './AddStudentModal';
 import MarkAttendanceModal from './MarkAttendanceModal';
-import { Button } from 'react-bootstrap';
+import { Button, Card, Row, Col } from 'react-bootstrap';
 import Loader from './Loader';
+import Navbar from './Navbar';
+import logo from '../assets/smitlogo.png'; // Update this path to your logo image
 
 const ClassDetail = () => {
   const { classId } = useParams();
@@ -28,8 +30,8 @@ const ClassDetail = () => {
       const classDoc = await getDoc(doc(db, 'classes', classId));
       if (classDoc.exists()) {
         setClassName(classDoc.data().name);
-        setLoading(false);
       }
+      setLoading(false);
     };
 
     const fetchStudents = async () => {
@@ -67,7 +69,6 @@ const ClassDetail = () => {
 
   const handleShowAddStudentModal = () => setShowAddStudentModal(true);
   const handleCloseAddStudentModal = () => setShowAddStudentModal(false);
-
   const handleShowMarkAttendanceModal = () => setShowMarkAttendanceModal(true);
   const handleCloseMarkAttendanceModal = () =>
     setShowMarkAttendanceModal(false);
@@ -77,64 +78,96 @@ const ClassDetail = () => {
   };
 
   return (
-    <div className="container mt-4">
-      {loading ? (
-        <Loader />
-      ) : (
-        <>
-          <h1 className="text-center">{className}</h1>
-          <div className="d-flex gap-5">
-            <h3>Students</h3>
-            <Button onClick={handleShowMarkAttendanceModal} className="mb-3">
-              Start Attendance
-            </Button>
-            <Link to={`/viewattendance/${classId}`}>
-              <Button className="mb-3">View Attendance</Button>
-            </Link>
-            <MarkAttendanceModal
-              show={showMarkAttendanceModal}
-              handleClose={handleCloseMarkAttendanceModal}
-              students={students}
-              onAttendanceMarked={handleAttendanceMarked}
-            />
-          </div>
+    <>
+      <Navbar />
 
-          {students.length > 0 ? (
-            <ul className="list-group mb-4">
-              {students.map((student) => (
-                <li
-                  key={student.id}
-                  className="list-group-item d-flex justify-content-between align-items-center"
+      <div className="container mt-4">
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            <h1 className="text-center mb-5">{className}</h1>
+            <div className="d-flex justify-content-between align-items-center flex-wrap mb-4">
+              <h3>Students</h3>
+              <div>
+                <Button
+                  onClick={handleShowMarkAttendanceModal}
+                  className="me-2 mt-2"
                 >
-                  <div>
-                    <strong>{student.name}</strong> ({student.email})
-                  </div>
-                  {student.imageUrl && (
-                    <img
-                      src={student.imageUrl}
-                      alt={student.name}
-                      className="rounded-circle"
-                      style={{ width: '50px', height: '50px' }}
-                    />
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p>No students in this class. Add a new student to get started.</p>
-          )}
-          <Button onClick={handleShowAddStudentModal} className="mb-4">
-            Add Student
-          </Button>
-          <AddStudentModal
-            show={showAddStudentModal}
-            handleClose={handleCloseAddStudentModal}
-            classId={classId}
-            onStudentAdded={handleStudentAdded}
-          />
-        </>
-      )}
-    </div>
+                  Start Attendance
+                </Button>
+                <Link to={`/viewattendance/${classId}`}>
+                  <Button className="mt-2">View Attendance</Button>
+                </Link>
+                <MarkAttendanceModal
+                  show={showMarkAttendanceModal}
+                  handleClose={handleCloseMarkAttendanceModal}
+                  students={students}
+                  onAttendanceMarked={handleAttendanceMarked}
+                />
+              </div>
+            </div>
+
+            <Row>
+              {students.length > 0 ? (
+                students.map((student) => (
+                  <Col
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    lg={3}
+                    key={student.id}
+                    className="mb-3"
+                  >
+                    <Card className="text-center student-card">
+                      <Card.Body>
+                        <img
+                          src={logo}
+                          alt="Logo"
+                          className="mb-3"
+                          style={{ width: '110px' }}
+                        />
+                        <Card.Title className="mb-1">
+                          SAYLANI MASS IT <br /> TRAINING PROGRAM
+                        </Card.Title>
+                        {student.imageUrl && (
+                          <img
+                            src={student.imageUrl}
+                            alt={student.name}
+                            className="pic"
+                          />
+                        )}
+                        <Card.Text className="name">{student.name}</Card.Text>
+                        <Card.Text className="classname">{className}</Card.Text>
+                        <Card.Text className="rollNo">
+                          {student.rollNo}
+                        </Card.Text>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                ))
+              ) : (
+                <Col xs={12}>
+                  <p>
+                    No students in this class. Add a new student to get started.
+                  </p>
+                </Col>
+              )}
+            </Row>
+
+            <Button onClick={handleShowAddStudentModal} className="mb-4">
+              Add Student
+            </Button>
+            <AddStudentModal
+              show={showAddStudentModal}
+              handleClose={handleCloseAddStudentModal}
+              classId={classId}
+              onStudentAdded={handleStudentAdded}
+            />
+          </>
+        )}
+      </div>
+    </>
   );
 };
 
